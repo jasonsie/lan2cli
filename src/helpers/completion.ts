@@ -1,29 +1,11 @@
-import {
-  OpenAIApi,
-  Configuration,
-  ChatCompletionRequestMessage,
-  Model,
-} from 'openai';
 import dedent from 'dedent';
 import { IncomingMessage } from 'http';
 import { KnownError } from './error';
 import { streamToIterable } from './stream-to-iterable';
 import { detectShell } from './os-detect';
-import type { AxiosError } from 'axios';
-import { streamToString } from './stream-to-string';
-import './replace-all-polyfill';
-import i18n from './i18n';
 import { stripRegexPatterns } from './strip-regex-patterns';
-import readline from 'readline';
-
-const explainInSecondRequest = true;
-
-function getOpenAi(key: string, apiEndpoint: string) {
-  const openAi = new OpenAIApi(
-    new Configuration({ apiKey: key, basePath: apiEndpoint })
-  );
-  return openAi;
-}
+import { createProvider } from './providers/index';
+import { getConfig } from './config';
 
 // Openai outputs markdown format for code blocks. It oftne uses
 // a github style like: "```bash"
@@ -43,7 +25,6 @@ export async function getScriptAndInfo({
   const fullPrompt = getFullPrompt(prompt);
   const stream = await generateCompletion({
     prompt: fullPrompt,
-    number: 1,
     key,
     model,
     apiEndpoint,
@@ -57,79 +38,81 @@ export async function getScriptAndInfo({
 
 export async function generateCompletion({
   prompt,
-  number = 1,
   key,
   model,
   apiEndpoint,
 }: {
-  prompt: string | ChatCompletionRequestMessage[];
-  number?: number;
+  prompt: string | Array<{ role: string; content: string }>;
   model?: string;
   key: string;
   apiEndpoint: string;
 }) {
-  const openAi = getOpenAi(key, apiEndpoint);
-  try {
-    const completion = await openAi.createChatCompletion(
-      {
-        model: model || 'gpt-4o-mini',
-        messages: Array.isArray(prompt)
-          ? prompt
-          : [{ role: 'user', content: prompt }],
-        n: Math.min(number, 10),
-        stream: true,
-      },
-      { responseType: 'stream' }
-    );
+  const config = await getConfig();
+  const providerName = config.PROVIDER || 'openai'; // Fallback to openai if undefined (though config defaults to gemini now, existing might vary)
 
-    return completion.data as unknown as IncomingMessage;
+  // If the provider is NOT openai, we need to ensure we have the correct key.
+  // The 'key' argument passed to this function is typically OPENAI_KEY from the CLI or config.
+  // If we are using Gemini, we need GEMINI_KEY.
+  // If we are using Ollama, we don't need a key.
+
+  let apiKey = key;
+  let endpoint = apiEndpoint;
+
+  if (providerName === 'gemini') {
+    apiKey = config.GEMINI_KEY || '';
+  } else if (providerName === 'ollama') {
+    apiKey = ''; // No key needed usually
+    endpoint = config.OLLAMA_HOST || 'http://localhost:11434';
+  }
+
+  const provider = createProvider(providerName);
+
+  // FR-011: Warn and fallback if configured MODEL is incompatible with selected PROVIDER
+  if (model) {
+    const isOpenAIModel = model.startsWith('gpt-') || model.startsWith('text-');
+    const isGeminiModel = model.startsWith('gemini-');
+
+    if (providerName === 'gemini' && isOpenAIModel) {
+      console.warn(
+        `\n${'Warning'}: Model '${model}' seems incompatible with Gemini. Using default.\n`
+      );
+      model = undefined;
+    } else if (providerName === 'openai' && isGeminiModel) {
+      console.warn(
+        `\n${'Warning'}: Model '${model}' seems incompatible with OpenAI. Using default.\n`
+      );
+      model = undefined;
+    }
+  }
+
+  // Convert message array to string for provider interface
+  let promptText = '';
+  if (Array.isArray(prompt)) {
+    promptText = prompt.map((m) => `${m.role}: ${m.content}`).join('\n');
+  } else {
+    promptText = prompt;
+  }
+
+  try {
+    return await provider.generateCompletion(promptText, {
+      apiKey,
+      model,
+      endpoint, // Use provider-specific endpoint (OLLAMA_HOST for Ollama, OPENAI_API_ENDPOINT for OpenAI)
+    });
   } catch (err) {
-    const error = err as AxiosError;
+    const error = err as any;
 
     if (error.code === 'ENOTFOUND') {
       throw new KnownError(
-        `Error connecting to ${error.request.hostname} (${error.request.syscall}). Are you connected to the internet?`
+        `Error connecting to ${error.request?.hostname || 'provider'} (${
+          error.request?.syscall || 'unknown'
+        }). Are you connected to the internet?`
       );
     }
 
-    const response = error.response;
-    let message = response?.data as string | object | IncomingMessage;
-    if (response && message instanceof IncomingMessage) {
-      message = await streamToString(
-        response.data as unknown as IncomingMessage
-      );
-      try {
-        // Handle if the message is JSON. It should be but occasionally will
-        // be HTML, so lets handle both
-        message = JSON.parse(message);
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    const messageString = message && JSON.stringify(message, null, 2);
-    if (response?.status === 429) {
-      throw new KnownError(
-        dedent`
-        Request to OpenAI failed with status 429. This is due to incorrect billing setup or excessive quota usage. Please follow this guide to fix it: https://help.openai.com/en/articles/6891831-error-code-429-you-exceeded-your-current-quota-please-check-your-plan-and-billing-details
-
-        You can activate billing here: https://platform.openai.com/account/billing/overview . Make sure to add a payment method if not under an active grant from OpenAI.
-
-        Full message from OpenAI:
-      ` +
-          '\n\n' +
-          messageString +
-          '\n'
-      );
-    } else if (response && message) {
-      throw new KnownError(
-        dedent`
-        Request to OpenAI failed with status ${response?.status}:
-      ` +
-          '\n\n' +
-          messageString +
-          '\n'
-      );
+    // Pass through KnownErrors
+    if (error instanceof KnownError) {
+      throw error;
     }
 
     throw error;
@@ -151,7 +134,6 @@ export async function getExplanation({
   const stream = await generateCompletion({
     prompt,
     key,
-    number: 1,
     model,
     apiEndpoint,
   });
@@ -176,7 +158,6 @@ export async function getRevision({
   const stream = await generateCompletion({
     prompt: fullPrompt,
     key,
-    number: 1,
     model,
     apiEndpoint,
   });
@@ -202,10 +183,6 @@ export const readData =
       const [excludedPrefix] = excluded;
       const stopTextStreamKeys = ['q', 'escape']; //Group of keys that stop the text stream
 
-      const rl = readline.createInterface({
-        input: process.stdin,
-      });
-
       process.stdin.setRawMode(true);
 
       process.stdin.on('keypress', (key, data) => {
@@ -217,6 +194,15 @@ export const readData =
         const payloads = chunk.toString().split('\n\n');
         for (const payload of payloads) {
           if (payload.includes('[DONE]') || stopTextStream) {
+            // Flush any remaining buffered content before resolving
+            if (buffer && !dataStart) {
+              const bufferedContentWithoutExcluded = stripRegexPatterns(
+                buffer,
+                excluded
+              );
+              data += bufferedContentWithoutExcluded;
+              writer(bufferedContentWithoutExcluded);
+            }
             dataStart = false;
             resolve(data);
             return;
@@ -233,6 +219,18 @@ export const readData =
                 // Clear the buffer once it has served its purpose
                 buffer = '';
                 if (excludedPrefix) break;
+              } else if (excludedPrefix && buffer.length > 50) {
+                // If we've accumulated content but no code block marker found,
+                // assume the response doesn't have code blocks and start displaying
+                dataStart = true;
+                // Write the buffered content first
+                const bufferedContentWithoutExcluded = stripRegexPatterns(
+                  buffer,
+                  excluded
+                );
+                data += bufferedContentWithoutExcluded;
+                writer(bufferedContentWithoutExcluded);
+                buffer = '';
               }
             }
 
@@ -259,12 +257,22 @@ export const readData =
         }
       }
 
+      // Flush any remaining buffered content before final resolve
+      if (buffer && !dataStart) {
+        const bufferedContentWithoutExcluded = stripRegexPatterns(
+          buffer,
+          excluded
+        );
+        data += bufferedContentWithoutExcluded;
+        writer(bufferedContentWithoutExcluded);
+      }
+
       resolve(data);
     });
 
 function getExplanationPrompt(script: string) {
   return dedent`
-    ${explainScript} Please reply in ${i18n.getCurrentLanguagenName()}
+    ${explainScript}
 
     The script: ${script}
   `;
@@ -301,8 +309,6 @@ function getFullPrompt(prompt: string) {
 
     ${generationDetails}
 
-    ${explainInSecondRequest ? '' : explainScript}
-
     The prompt is: ${prompt}
   `;
 }
@@ -317,14 +323,4 @@ function getRevisionPrompt(prompt: string, code: string) {
 
     ${generationDetails}
   `;
-}
-
-export async function getModels(
-  key: string,
-  apiEndpoint: string
-): Promise<Model[]> {
-  const openAi = getOpenAi(key, apiEndpoint);
-  const response = await openAi.listModels();
-
-  return response.data.data.filter((model) => model.object === 'model');
 }

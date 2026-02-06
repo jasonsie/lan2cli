@@ -1,0 +1,37 @@
+{
+  "name": "command-generation-ls",
+  "description": "Sample response for 'list files in current directory' prompt",
+  "request": {
+    "prompt": "list all files in current directory",
+    "model": "qwen2.5-coder:14b"
+  },
+  "response": {
+    "chunks": [
+      {
+        "model": "qwen2.5-coder:14b",
+        "created_at": "2026-01-30T12:00:00.000Z",
+        "message": { "role": "assistant", "content": "ls" },
+        "done": false
+      },
+      {
+        "model": "qwen2.5-coder:14b",
+        "created_at": "2026-01-30T12:00:00.001Z",
+        "message": { "role": "assistant", "content": " -" },
+        "done": false
+      },
+      {
+        "model": "qwen2.5-coder:14b",
+        "created_at": "2026-01-30T12:00:00.002Z",
+        "message": { "role": "assistant", "content": "la" },
+        "done": false
+      },
+      {
+        "model": "qwen2.5-coder:14b",
+        "created_at": "2026-01-30T12:00:00.003Z",
+        "message": { "role": "assistant", "content": "" },
+        "done": true,
+        "done_reason": "stop"
+      }
+    ]
+  }
+}

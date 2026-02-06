@@ -1,0 +1,462 @@
+{
+  "name": "multi-turn-chat-session",
+  "description": "Fixture for testing multi-turn conversation context in chat mode",
+  "turns": [
+    {
+      "name": "turn-1-greeting",
+      "request": {
+        "prompt": "Hello, I need help with shell commands",
+        "model": "qwen2.5-coder:14b"
+      },
+      "response": {
+        "chunks": [
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.000Z",
+            "message": { "role": "assistant", "content": "Hello" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.010Z",
+            "message": { "role": "assistant", "content": "!" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.020Z",
+            "message": { "role": "assistant", "content": " I" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.030Z",
+            "message": { "role": "assistant", "content": "'d" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.040Z",
+            "message": { "role": "assistant", "content": " be" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.050Z",
+            "message": { "role": "assistant", "content": " happy" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.060Z",
+            "message": { "role": "assistant", "content": " to" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.070Z",
+            "message": { "role": "assistant", "content": " help" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.080Z",
+            "message": { "role": "assistant", "content": " with" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.090Z",
+            "message": { "role": "assistant", "content": " shell" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.100Z",
+            "message": { "role": "assistant", "content": " commands" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.110Z",
+            "message": { "role": "assistant", "content": "." },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.120Z",
+            "message": { "role": "assistant", "content": " What" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.130Z",
+            "message": { "role": "assistant", "content": " do" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.140Z",
+            "message": { "role": "assistant", "content": " you" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.150Z",
+            "message": { "role": "assistant", "content": " need" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.160Z",
+            "message": { "role": "assistant", "content": "?" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:00:00.170Z",
+            "message": { "role": "assistant", "content": "" },
+            "done": true,
+            "done_reason": "stop"
+          }
+        ]
+      }
+    },
+    {
+      "name": "turn-2-list-files",
+      "request": {
+        "prompt": "How do I list all files including hidden ones?",
+        "model": "qwen2.5-coder:14b"
+      },
+      "response": {
+        "chunks": [
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.000Z",
+            "message": { "role": "assistant", "content": "To" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.010Z",
+            "message": { "role": "assistant", "content": " list" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.020Z",
+            "message": { "role": "assistant", "content": " all" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.030Z",
+            "message": { "role": "assistant", "content": " files" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.040Z",
+            "message": { "role": "assistant", "content": " including" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.050Z",
+            "message": { "role": "assistant", "content": " hidden" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.060Z",
+            "message": { "role": "assistant", "content": " ones" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.070Z",
+            "message": { "role": "assistant", "content": "," },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.080Z",
+            "message": { "role": "assistant", "content": " use" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.090Z",
+            "message": { "role": "assistant", "content": ":\n\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.100Z",
+            "message": { "role": "assistant", "content": "```" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.110Z",
+            "message": { "role": "assistant", "content": "bash" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.120Z",
+            "message": { "role": "assistant", "content": "\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.130Z",
+            "message": { "role": "assistant", "content": "ls" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.140Z",
+            "message": { "role": "assistant", "content": " -la" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.150Z",
+            "message": { "role": "assistant", "content": "\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.160Z",
+            "message": { "role": "assistant", "content": "```" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.170Z",
+            "message": { "role": "assistant", "content": "\n\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.180Z",
+            "message": { "role": "assistant", "content": "The" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.190Z",
+            "message": { "role": "assistant", "content": " `-a`" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.200Z",
+            "message": { "role": "assistant", "content": " flag" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.210Z",
+            "message": { "role": "assistant", "content": " shows" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.220Z",
+            "message": { "role": "assistant", "content": " hidden" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.230Z",
+            "message": { "role": "assistant", "content": " files" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.240Z",
+            "message": { "role": "assistant", "content": "." },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:01:00.250Z",
+            "message": { "role": "assistant", "content": "" },
+            "done": true,
+            "done_reason": "stop"
+          }
+        ]
+      }
+    },
+    {
+      "name": "turn-3-follow-up",
+      "request": {
+        "prompt": "What if I also want to see file sizes in human readable format?",
+        "model": "qwen2.5-coder:14b"
+      },
+      "response": {
+        "chunks": [
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.000Z",
+            "message": { "role": "assistant", "content": "Just" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.010Z",
+            "message": { "role": "assistant", "content": " add" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.020Z",
+            "message": { "role": "assistant", "content": " the" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.030Z",
+            "message": { "role": "assistant", "content": " `-h`" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.040Z",
+            "message": { "role": "assistant", "content": " flag" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.050Z",
+            "message": { "role": "assistant", "content": ":\n\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.060Z",
+            "message": { "role": "assistant", "content": "```" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.070Z",
+            "message": { "role": "assistant", "content": "bash" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.080Z",
+            "message": { "role": "assistant", "content": "\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.090Z",
+            "message": { "role": "assistant", "content": "ls" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.100Z",
+            "message": { "role": "assistant", "content": " -lah" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.110Z",
+            "message": { "role": "assistant", "content": "\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.120Z",
+            "message": { "role": "assistant", "content": "```" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.130Z",
+            "message": { "role": "assistant", "content": "\n\n" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.140Z",
+            "message": { "role": "assistant", "content": "This" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.150Z",
+            "message": { "role": "assistant", "content": " will" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.160Z",
+            "message": { "role": "assistant", "content": " show" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.170Z",
+            "message": { "role": "assistant", "content": " sizes" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.180Z",
+            "message": { "role": "assistant", "content": " like" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.190Z",
+            "message": { "role": "assistant", "content": " 1K" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.200Z",
+            "message": { "role": "assistant", "content": "," },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.210Z",
+            "message": { "role": "assistant", "content": " 2M" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.220Z",
+            "message": { "role": "assistant", "content": "," },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.230Z",
+            "message": { "role": "assistant", "content": " 3G" },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.240Z",
+            "message": { "role": "assistant", "content": "." },
+            "done": false
+          },
+          {
+            "model": "qwen2.5-coder:14b",
+            "created_at": "2026-01-30T12:02:00.250Z",
+            "message": { "role": "assistant", "content": "" },
+            "done": true,
+            "done_reason": "stop"
+          }
+        ]
+      }
+    }
+  ]
+}

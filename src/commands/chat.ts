@@ -4,8 +4,11 @@ import { cyan, green } from 'kolorist';
 import { generateCompletion, readData } from '../helpers/completion';
 import { getConfig } from '../helpers/config';
 import { streamToIterable } from '../helpers/stream-to-iterable';
-import { ChatCompletionRequestMessage } from 'openai';
-import i18n from '../helpers/i18n';
+
+interface ChatMessage {
+  role: string;
+  content: string;
+}
 
 export default command(
   {
@@ -21,36 +24,36 @@ export default command(
       OPENAI_API_ENDPOINT: apiEndpoint,
       MODEL: model,
     } = await getConfig();
-    const chatHistory: ChatCompletionRequestMessage[] = [];
+    const chatHistory: ChatMessage[] = [];
 
     console.log('');
-    intro(i18n.t('Starting new conversation'));
+    intro('Starting new conversation');
     const prompt = async () => {
-      const msgYou = `${i18n.t('You')}:`;
+      const msgYou = `${'You'}:`;
       const userPrompt = (await text({
         message: `${cyan(msgYou)}`,
-        placeholder: i18n.t(`send a message ('exit' to quit)`),
+        placeholder: `send a message ('exit' to quit)`,
         validate: (value) => {
-          if (!value) return i18n.t('Please enter a prompt.');
+          if (!value) return 'Please enter a prompt.';
         },
       })) as string;
 
       if (isCancel(userPrompt) || userPrompt === 'exit') {
-        outro(i18n.t('Goodbye!'));
+        outro('Goodbye!');
         process.exit(0);
       }
 
       const infoSpin = spinner();
-      infoSpin.start(i18n.t(`THINKING...`));
+      infoSpin.start(`THINKING...`);
       chatHistory.push({
         role: 'user',
         content: userPrompt,
       });
       const { readResponse } = await getResponse({
         prompt: chatHistory,
-        key,
+        key: key!,
         model,
-        apiEndpoint,
+        apiEndpoint: apiEndpoint!,
       });
 
       infoSpin.stop(`${green('AI Shell:')}`);
@@ -73,13 +76,11 @@ export default command(
 
 async function getResponse({
   prompt,
-  number = 1,
   key,
   model,
   apiEndpoint,
 }: {
-  prompt: string | ChatCompletionRequestMessage[];
-  number?: number;
+  prompt: string | ChatMessage[];
   model?: string;
   key: string;
   apiEndpoint: string;
@@ -88,7 +89,6 @@ async function getResponse({
     prompt,
     key,
     model,
-    number,
     apiEndpoint,
   });
 

@@ -1,0 +1,54 @@
+{
+  "connectionRefused": {
+    "name": "connection-refused",
+    "description": "Simulates Ollama service not running",
+    "error": {
+      "code": "ECONNREFUSED",
+      "message": "connect ECONNREFUSED 127.0.0.1:11434",
+      "errno": -61,
+      "syscall": "connect",
+      "address": "127.0.0.1",
+      "port": 11434
+    }
+  },
+  "timeout": {
+    "name": "timeout",
+    "description": "Simulates connection timeout after 10 seconds",
+    "error": {
+      "code": "ETIMEDOUT",
+      "message": "timeout of 10000ms exceeded"
+    }
+  },
+  "modelNotFound": {
+    "name": "model-not-found",
+    "description": "Simulates model not available locally",
+    "tagsResponse": {
+      "models": [
+        {
+          "name": "llama3:latest",
+          "modified_at": "2026-01-20T10:00:00.000Z",
+          "size": 4700000000
+        }
+      ]
+    },
+    "requestedModel": "qwen2.5-coder:14b"
+  },
+  "invalidHost": {
+    "name": "invalid-host",
+    "description": "Simulates invalid OLLAMA_HOST URL",
+    "host": "not-a-valid-url",
+    "expectedError": "Invalid Ollama host URL"
+  },
+  "streamInterruption": {
+    "name": "stream-interruption",
+    "description": "Simulates stream being interrupted mid-response",
+    "partialChunks": [
+      {
+        "model": "qwen2.5-coder:14b",
+        "message": { "role": "assistant", "content": "ls" },
+        "done": false
+      },
+      { "error": "an error was encountered while running the model" }
+    ]
+  }
+}

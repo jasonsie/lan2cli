@@ -2,40 +2,35 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import ini from 'ini';
-import type { TiktokenModel } from '@dqbd/tiktoken';
 import { commandName } from './constants';
 import { KnownError, handleCliError } from './error';
 import * as p from '@clack/prompts';
 import { red } from 'kolorist';
-import i18n from './i18n';
-import { getModels } from './completion';
-import { Model } from 'openai';
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: unknown, key: PropertyKey) =>
   hasOwnProperty.call(object, key);
 
-const languagesOptions = Object.entries(i18n.languages).map(([key, value]) => ({
-  value: key,
-  label: value,
-}));
-
 const parseAssert = (name: string, condition: any, message: string) => {
   if (!condition) {
-    throw new KnownError(
-      `${i18n.t('Invalid config property')} ${name}: ${message}`
-    );
+    throw new KnownError(`${'Invalid config property'} ${name}: ${message}`);
+  }
+};
+
+/**
+ * Validates that a string is a valid Ollama host URL (http or https)
+ */
+export const isValidOllamaHost = (host: string): boolean => {
+  try {
+    const url = new URL(host);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
   }
 };
 
 const configParsers = {
   OPENAI_KEY(key?: string) {
-    if (!key) {
-      throw new KnownError(
-        `Please set your OpenAI API key via \`${commandName} config set OPENAI_KEY=<your token>\`` // TODO: i18n
-      );
-    }
-
     return key;
   },
   MODEL(model?: string) {
@@ -43,7 +38,7 @@ const configParsers = {
       return 'gpt-4o-mini';
     }
 
-    return model as TiktokenModel;
+    return model;
   },
   SILENT_MODE(mode?: string) {
     return String(mode).toLowerCase() === 'true';
@@ -51,8 +46,34 @@ const configParsers = {
   OPENAI_API_ENDPOINT(apiEndpoint?: string) {
     return apiEndpoint || 'https://api.openai.com/v1';
   },
-  LANGUAGE(language?: string) {
-    return language || 'en';
+  PROVIDER(provider?: string) {
+    if (!provider || provider.length === 0) {
+      return 'gemini';
+    }
+    const allowedProviders = ['openai', 'gemini', 'ollama'];
+    if (!allowedProviders.includes(provider)) {
+      throw new KnownError(
+        `${'Invalid provider'}: ${provider}. ${'Allowed providers'}: ${allowedProviders.join(
+          ', '
+        )}`
+      );
+    }
+    return provider as 'openai' | 'gemini' | 'ollama';
+  },
+  GEMINI_KEY(key?: string) {
+    return key;
+  },
+  OLLAMA_HOST(host?: string) {
+    if (!host) {
+      return 'http://localhost:11434';
+    }
+    // Validate URL format
+    if (!isValidOllamaHost(host)) {
+      throw new KnownError(
+        `${'Invalid Ollama host URL'}: ${host}. ${'Must be a valid http:// or https:// URL'}`
+      );
+    }
+    return host;
   },
 } as const;
 
@@ -104,7 +125,7 @@ export const setConfigs = async (keyValues: [key: string, value: string][]) => {
 
   for (const [key, value] of keyValues) {
     if (!hasOwn(configParsers, key)) {
-      throw new KnownError(`${i18n.t('Invalid config property')}: ${key}`);
+      throw new KnownError(`${'Invalid config property'}: ${key}`);
     }
 
     const parsed = configParsers[key as ConfigKeys](value);
@@ -118,58 +139,100 @@ export const showConfigUI = async () => {
   try {
     const config = await getConfig();
     const choice = (await p.select({
-      message: i18n.t('Set config') + ':',
+      message: 'Set config' + ':',
       options: [
         {
-          label: i18n.t('OpenAI Key'),
-          value: 'OPENAI_KEY',
-          hint: hasOwn(config, 'OPENAI_KEY')
-            ? // Obfuscate the key
-              'sk-...' + config.OPENAI_KEY.slice(-3)
-            : i18n.t('(not set)'),
+          label: 'Provider',
+          value: 'PROVIDER',
+          hint: hasOwn(config, 'PROVIDER') ? config.PROVIDER : 'gemini',
         },
         {
-          label: i18n.t('OpenAI API Endpoint'),
+          label: 'OpenAI Key',
+          value: 'OPENAI_KEY',
+          hint: config.OPENAI_KEY
+            ? // Obfuscate the key
+              'sk-...' + config.OPENAI_KEY.slice(-3)
+            : '(not set)',
+        },
+        {
+          label: 'Gemini Key',
+          value: 'GEMINI_KEY',
+          hint: config.GEMINI_KEY
+            ? // Obfuscate the key
+              '...' + config.GEMINI_KEY.slice(-3)
+            : '(not set)',
+        },
+        {
+          label: 'Ollama Host',
+          value: 'OLLAMA_HOST',
+          hint: hasOwn(config, 'OLLAMA_HOST')
+            ? config.OLLAMA_HOST
+            : 'http://localhost:11434',
+        },
+        {
+          label: 'OpenAI API Endpoint',
           value: 'OPENAI_API_ENDPOINT',
           hint: hasOwn(config, 'OPENAI_API_ENDPOINT')
             ? config.OPENAI_API_ENDPOINT
-            : i18n.t('(not set)'),
+            : '(not set)',
         },
         {
-          label: i18n.t('Silent Mode'),
+          label: 'Silent Mode',
           value: 'SILENT_MODE',
           hint: hasOwn(config, 'SILENT_MODE')
             ? config.SILENT_MODE.toString()
-            : i18n.t('(not set)'),
+            : '(not set)',
         },
         {
-          label: i18n.t('Model'),
+          label: 'Model',
           value: 'MODEL',
-          hint: hasOwn(config, 'MODEL') ? config.MODEL : i18n.t('(not set)'),
+          hint: hasOwn(config, 'MODEL') ? config.MODEL : '(not set)',
         },
         {
-          label: i18n.t('Language'),
-          value: 'LANGUAGE',
-          hint: hasOwn(config, 'LANGUAGE')
-            ? config.LANGUAGE
-            : i18n.t('(not set)'),
-        },
-        {
-          label: i18n.t('Cancel'),
+          label: 'Cancel',
           value: 'cancel',
-          hint: i18n.t('Exit the program'),
+          hint: 'Exit the program',
         },
       ],
     })) as ConfigKeys | 'cancel' | symbol;
 
     if (p.isCancel(choice)) return;
 
-    if (choice === 'OPENAI_KEY') {
+    if (choice === 'PROVIDER') {
+      const provider = await p.select({
+        message: 'Select a provider',
+        options: [
+          { value: 'gemini', label: 'Google Gemini' },
+          { value: 'openai', label: 'OpenAI' },
+          { value: 'ollama', label: 'Ollama (Local)' },
+        ],
+      });
+      if (p.isCancel(provider)) return;
+      await setConfigs([['PROVIDER', provider as string]]);
+    } else if (choice === 'GEMINI_KEY') {
       const key = await p.text({
-        message: i18n.t('Enter your OpenAI API key'),
+        message: 'Enter your Gemini API key',
         validate: (value) => {
           if (!value.length) {
-            return i18n.t('Please enter a key');
+            return 'Please enter a key';
+          }
+        },
+      });
+      if (p.isCancel(key)) return;
+      await setConfigs([['GEMINI_KEY', key]]);
+    } else if (choice === 'OLLAMA_HOST') {
+      const host = await p.text({
+        message: 'Enter your Ollama Host URL',
+        initialValue: 'http://localhost:11434',
+      });
+      if (p.isCancel(host)) return;
+      await setConfigs([['OLLAMA_HOST', host]]);
+    } else if (choice === 'OPENAI_KEY') {
+      const key = await p.text({
+        message: 'Enter your OpenAI API key',
+        validate: (value) => {
+          if (!value.length) {
+            return 'Please enter a key';
           }
         },
       });
@@ -177,37 +240,23 @@ export const showConfigUI = async () => {
       await setConfigs([['OPENAI_KEY', key]]);
     } else if (choice === 'OPENAI_API_ENDPOINT') {
       const apiEndpoint = await p.text({
-        message: i18n.t('Enter your OpenAI API Endpoint'),
+        message: 'Enter your OpenAI API Endpoint',
       });
       if (p.isCancel(apiEndpoint)) return;
       await setConfigs([['OPENAI_API_ENDPOINT', apiEndpoint]]);
     } else if (choice === 'SILENT_MODE') {
       const silentMode = await p.confirm({
-        message: i18n.t('Enable silent mode?'),
+        message: 'Enable silent mode?',
       });
       if (p.isCancel(silentMode)) return;
       await setConfigs([['SILENT_MODE', silentMode ? 'true' : 'false']]);
     } else if (choice === 'MODEL') {
-      const { OPENAI_KEY: key, OPENAI_API_ENDPOINT: apiEndpoint } =
-        await getConfig();
-      const models = await getModels(key, apiEndpoint);
-      const model = (await p.select({
-        message: 'Pick a model.',
-        options: models.map((m: Model) => {
-          return { value: m.id, label: m.id };
-        }),
-      })) as string;
-
+      const model = await p.text({
+        message: 'Enter model name',
+        placeholder: 'gpt-4o-mini',
+      });
       if (p.isCancel(model)) return;
       await setConfigs([['MODEL', model]]);
-    } else if (choice === 'LANGUAGE') {
-      const language = (await p.select({
-        message: i18n.t('Enter the language you want to use'),
-        options: languagesOptions,
-      })) as string;
-      if (p.isCancel(language)) return;
-      await setConfigs([['LANGUAGE', language]]);
-      i18n.setLanguage(language);
     }
     if (choice === 'cancel') return;
     showConfigUI();

@@ -1,0 +1,16 @@
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.000Z","message":{"role":"assistant","content":"To"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.010Z","message":{"role":"assistant","content":" list"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.020Z","message":{"role":"assistant","content":" all"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.030Z","message":{"role":"assistant","content":" files"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.040Z","message":{"role":"assistant","content":","},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.050Z","message":{"role":"assistant","content":" use"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.060Z","message":{"role":"assistant","content":":"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.070Z","message":{"role":"assistant","content":"\n\n"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.080Z","message":{"role":"assistant","content":"```"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.090Z","message":{"role":"assistant","content":"bash"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.100Z","message":{"role":"assistant","content":"\n"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.110Z","message":{"role":"assistant","content":"ls"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.120Z","message":{"role":"assistant","content":" -la"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.130Z","message":{"role":"assistant","content":"\n"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.140Z","message":{"role":"assistant","content":"```"},"done":false}
+{"model":"qwen2.5-coder:14b","created_at":"2026-01-30T12:00:00.150Z","message":{"role":"assistant","content":""},"done":true,"done_reason":"stop"}
