@@ -163,6 +163,8 @@ SILENT_MODE=false
 
 ### Main Usage
 
+The `lan2cli` command is available globally (via `npm link`) and can be run from any directory:
+
 ```bash
 lan2cli <prompt>              # Single-prompt mode
 lan2cli chat                  # Interactive chat mode
@@ -245,12 +247,14 @@ Coverage reports generated in `coverage/` directory with multiple formats:
 ### Build Commands
 
 ```bash
-npm run build         # Bundle with pkgroll to dist/cli.mjs
+npm run build         # Bundle with pkgroll to dist/cli.mjs (required for global lan2cli)
 npm run lint          # Check code quality (prettier + eslint)
 npm run lint:fix      # Auto-fix linting issues
 npm run typecheck     # TypeScript type checking
-npm start             # Run from source with jiti
+npm start             # Run from source with jiti (no build required)
 ```
+
+**Note:** After `npm run build`, the global `lan2cli` command automatically uses the updated `dist/cli.mjs` via the npm link symlink.
 
 ### Build Output
 
@@ -268,6 +272,67 @@ npm run release:patch  # Build, bump version, publish, push tags
 - Package name: `@builder.io/ai-shell`
 - Version: 1.0.12
 - Files included: `dist/` directory only
+
+## Development Setup
+
+### Global Command Access
+
+The project uses `npm link` to make the `lan2cli` command available globally during development:
+
+```bash
+# Initial setup (already done)
+npm link
+
+# Verify global access
+which lan2cli  # Should show: ~/.nvm/versions/node/v*/bin/lan2cli
+lan2cli --help # Works from any directory
+```
+
+**How it works:**
+- Creates symlink in npm's global `node_modules` pointing to project directory
+- Creates symlink in npm's global `bin` pointing to `dist/cli.mjs`
+- Makes `lan2cli` available in PATH from any directory
+- Changes are automatically reflected after rebuild (symlink points to project)
+
+### Development Workflows
+
+**Testing Built Version (Recommended for final verification):**
+```bash
+npm run build      # Rebuild dist/cli.mjs
+lan2cli <command>  # Test globally (uses symlinked dist/cli.mjs)
+```
+
+**Fast Development Iteration (No build required):**
+```bash
+npm start -- <command>  # Run directly from source with jiti
+```
+
+**Example workflows:**
+```bash
+# Test a specific prompt globally
+npm run build
+lan2cli "list all log files"
+
+# Quick development cycle (no build)
+npm start -- "list all log files"
+
+# Test chat mode globally
+lan2cli chat
+
+# Test config UI globally
+lan2cli config
+```
+
+### Unlinking (If Needed)
+
+To remove global command access:
+```bash
+npm unlink                        # From project directory
+# Or
+npm unlink -g @builder.io/ai-shell  # From anywhere
+```
+
+**Note:** When switching Node.js versions with nvm, re-run `npm link` after switching.
 
 ## Architecture Principles
 
@@ -357,7 +422,15 @@ npm run release:patch  # Build, bump version, publish, push tags
 
 ## Recent Changes
 
-### Branch: 004-remove-i18n (Current)
+### Current: Global Command Setup
+
+- Enabled global `lan2cli` command access using `npm link`
+- Command now available from any directory in terminal
+- Symlink points to `dist/cli.mjs` in project directory
+- Documented development workflows in CLAUDE.md
+- No code changes required (package already configured correctly)
+
+### Branch: 004-remove-i18n
 
 - Removed i18n (internationalization) feature
 - Replaced all i18n.t() calls with hardcoded English strings

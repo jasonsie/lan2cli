@@ -64,7 +64,14 @@
       "Bash(git -C /Users/jason/Developer/z-ex/ai/tools/ai-shell branch:*)",
       "Bash(npm run lint)",
       "Bash(npm run lint:fix:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(/Users/jason/Developer/z-ex/ai/tools/lan2cli/dist/cli.mjs:*)",
+      "Bash(npm start -- --help)",
+      "Bash(test:*)",
+      "Bash(npm bin:*)",
+      "Bash(npm run:*)",
+      "Bash(npm start --help:*)",
+      "Bash(npm config:*)"
     ]
   },
   "enabledPlugins": {
