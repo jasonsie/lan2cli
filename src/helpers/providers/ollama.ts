@@ -4,7 +4,8 @@ import axios, { AxiosError } from 'axios';
 import { CompletionOptions, CompletionProvider } from './types';
 import { KnownError } from '../error';
 
-const OLLAMA_TIMEOUT_MS = 10000; // 10 seconds
+const OLLAMA_CONNECT_TIMEOUT_MS = 10000; // 10 seconds for connection/health checks
+const OLLAMA_GENERATE_TIMEOUT_MS = 0; // No timeout for generation (large models can take time to load)
 const DEFAULT_MODEL = 'qwen2.5-coder:14b';
 const DEFAULT_HOST = 'http://localhost:11434';
 
@@ -30,7 +31,7 @@ function handleOllamaError(error: unknown, host: string): never {
     ) {
       throw new KnownError(
         `${'Connection to Ollama timed out after'} ${
-          OLLAMA_TIMEOUT_MS / 1000
+          OLLAMA_CONNECT_TIMEOUT_MS / 1000
         }s. ${'Please check if Ollama is responding'}.`
       );
     }
@@ -91,7 +92,7 @@ export class OllamaProvider implements CompletionProvider {
         },
         {
           responseType: 'stream',
-          timeout: OLLAMA_TIMEOUT_MS,
+          timeout: OLLAMA_GENERATE_TIMEOUT_MS,
         }
       );
 
@@ -110,7 +111,7 @@ export class OllamaProvider implements CompletionProvider {
   ): Promise<void> {
     try {
       const tagsResponse = await axios.get(`${host}/api/tags`, {
-        timeout: OLLAMA_TIMEOUT_MS,
+        timeout: OLLAMA_CONNECT_TIMEOUT_MS,
       });
       const models = tagsResponse.data?.models || [];
       const modelExists = models.some(
