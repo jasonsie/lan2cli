@@ -37,9 +37,11 @@ export function resolveModel(
   provider: ProviderName,
   model?: string
 ): { model?: string; warning?: string } {
-  if (!model || isCompatible(provider, model)) return { model };
-
+  // The MODEL parser yields this placeholder when MODEL is unset; every
+  // provider then uses its own default.
   if (model === unsetModelPlaceholder) return { model: undefined };
+
+  if (!model || isCompatible(provider, model)) return { model };
 
   return {
     model: undefined,

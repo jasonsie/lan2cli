@@ -9,7 +9,6 @@ describe('resolveModel', () => {
     ['openai', 'gpt-4o'],
     ['gemini', 'gemini-3-flash-preview'],
     ['ollama', 'qwen2.5-coder:14b'],
-    ['ollama', 'gpt-4o-mini'],
   ] as const)('keeps %s model %s', (provider, model) => {
     expect(resolveModel(provider, model)).toEqual({ model });
   });
@@ -51,7 +50,12 @@ describe('resolveModel', () => {
   });
 
   it('silently ignores the unset-MODEL placeholder', () => {
-    for (const provider of ['anthropic', 'gemini'] as const) {
+    for (const provider of [
+      'anthropic',
+      'gemini',
+      'ollama',
+      'openai',
+    ] as const) {
       expect(resolveModel(provider, unsetModelPlaceholder)).toEqual({
         model: undefined,
       });
