@@ -14,3 +14,5 @@ build/
 .env*
 coverage/
 
+# Third-party agent templates (Everything Claude Code); keep local only
+.claude/
