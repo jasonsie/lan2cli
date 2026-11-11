@@ -2,10 +2,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import ini from 'ini';
-import { commandName } from './constants';
 import { KnownError, handleCliError } from './error';
 import * as p from '@clack/prompts';
 import { red } from 'kolorist';
+import { ProviderName } from './providers/types';
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: unknown, key: PropertyKey) =>
@@ -50,7 +50,12 @@ const configParsers = {
     if (!provider || provider.length === 0) {
       return 'gemini';
     }
-    const allowedProviders = ['openai', 'gemini', 'ollama'];
+    const allowedProviders: string[] = [
+      'openai',
+      'gemini',
+      'ollama',
+      'anthropic',
+    ];
     if (!allowedProviders.includes(provider)) {
       throw new KnownError(
         `${'Invalid provider'}: ${provider}. ${'Allowed providers'}: ${allowedProviders.join(
@@ -58,9 +63,12 @@ const configParsers = {
         )}`
       );
     }
-    return provider as 'openai' | 'gemini' | 'ollama';
+    return provider as ProviderName;
   },
   GEMINI_KEY(key?: string) {
+    return key;
+  },
+  ANTHROPIC_KEY(key?: string) {
     return key;
   },
   OLLAMA_HOST(host?: string) {
@@ -163,6 +171,14 @@ export const showConfigUI = async () => {
             : '(not set)',
         },
         {
+          label: 'Anthropic Key',
+          value: 'ANTHROPIC_KEY',
+          hint: config.ANTHROPIC_KEY
+            ? // Obfuscate the key
+              '...' + config.ANTHROPIC_KEY.slice(-3)
+            : '(not set)',
+        },
+        {
           label: 'Ollama Host',
           value: 'OLLAMA_HOST',
           hint: hasOwn(config, 'OLLAMA_HOST')
@@ -204,6 +220,7 @@ export const showConfigUI = async () => {
         options: [
           { value: 'gemini', label: 'Google Gemini' },
           { value: 'openai', label: 'OpenAI' },
+          { value: 'anthropic', label: 'Anthropic Claude' },
           { value: 'ollama', label: 'Ollama (Local)' },
         ],
       });
@@ -220,6 +237,17 @@ export const showConfigUI = async () => {
       });
       if (p.isCancel(key)) return;
       await setConfigs([['GEMINI_KEY', key]]);
+    } else if (choice === 'ANTHROPIC_KEY') {
+      const key = await p.text({
+        message: 'Enter your Anthropic API key',
+        validate: (value) => {
+          if (!value.length) {
+            return 'Please enter a key';
+          }
+        },
+      });
+      if (p.isCancel(key)) return;
+      await setConfigs([['ANTHROPIC_KEY', key]]);
     } else if (choice === 'OLLAMA_HOST') {
       const host = await p.text({
         message: 'Enter your Ollama Host URL',

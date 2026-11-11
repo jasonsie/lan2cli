@@ -4,6 +4,11 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import ini from 'ini';
+import { createProvider } from '../../src/helpers/providers';
+import { AnthropicProvider } from '../../src/helpers/providers/anthropic';
+import { GeminiProvider } from '../../src/helpers/providers/gemini';
+import { OllamaProvider } from '../../src/helpers/providers/ollama';
+import { OpenAIProvider } from '../../src/helpers/providers/openai';
 
 vi.mock('os', () => ({
   default: {
@@ -66,6 +71,54 @@ describe('Provider Switching Integration', () => {
     );
     config = await getConfig();
     expect(config.PROVIDER).toBe('ollama');
+
+    // 4. Change to Anthropic
+    vi.mocked(fs.readFile).mockResolvedValue(
+      ini.stringify({
+        PROVIDER: 'anthropic',
+        ANTHROPIC_KEY: 'sk-ant-test',
+      })
+    );
+    config = await getConfig();
+    expect(config.PROVIDER).toBe('anthropic');
+    expect(config.ANTHROPIC_KEY).toBe('sk-ant-test');
+  });
+
+  it('should create the matching provider for every allowed PROVIDER', () => {
+    expect(createProvider('openai')).toBeInstanceOf(OpenAIProvider);
+    expect(createProvider('gemini')).toBeInstanceOf(GeminiProvider);
+    expect(createProvider('ollama')).toBeInstanceOf(OllamaProvider);
+    expect(createProvider('anthropic')).toBeInstanceOf(AnthropicProvider);
+  });
+
+  it('should persist PROVIDER=anthropic and ANTHROPIC_KEY via setConfigs', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue('');
+    vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+
+    await setConfigs([
+      ['PROVIDER', 'anthropic'],
+      ['ANTHROPIC_KEY', 'sk-ant-test'],
+    ]);
+
+    const written = ini.parse(
+      vi.mocked(fs.writeFile).mock.calls[0][1] as string
+    );
+    expect(written.PROVIDER).toBe('anthropic');
+    expect(written.ANTHROPIC_KEY).toBe('sk-ant-test');
+  });
+
+  it('should list anthropic among allowed providers when PROVIDER is invalid', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(ini.stringify({ PROVIDER: 'x' }));
+
+    await expect(getConfig()).rejects.toThrow(/Allowed providers.*anthropic/);
+  });
+
+  it('should leave ANTHROPIC_KEY undefined when unset', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue('');
+
+    const config = await getConfig();
+
+    expect(config.ANTHROPIC_KEY).toBeUndefined();
   });
 
   it('should fallback to default provider if config is missing', async () => {
