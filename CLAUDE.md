@@ -1,8 +1,8 @@
-# AI Shell
+# lan2cli
 
 ## Project Overview
 
-AI Shell is a CLI tool that converts natural language to shell commands. It supports multiple AI providers (Gemini, OpenAI, Ollama) and offers both single-prompt and interactive chat modes. Built with TypeScript/Node.js using cleye for CLI parsing and @clack/prompts for interactive UI.
+lan2cli (a fork of Builder.io's MIT-licensed ai-shell) is a CLI tool that converts natural language to shell commands. It supports multiple AI providers (Gemini, OpenAI, Claude, Ollama) and offers both single-prompt and interactive chat modes. Built with TypeScript/Node.js using cleye for CLI parsing and @clack/prompts for interactive UI.
 
 ## Critical Rules
 
@@ -31,7 +31,7 @@ AI Shell is a CLI tool that converts natural language to shell commands. It supp
 ## File Structure
 
 ```
-ai-shell/
+lan2cli/
 ├── src/
 │   ├── cli.ts              # CLI entry point using cleye
 │   ├── prompt.ts           # Main prompt handler and user interaction flow
@@ -43,7 +43,8 @@ ai-shell/
 │   │   ├── config.ts       # INI-based config management with parsers
 │   │   ├── completion.ts   # Provider-agnostic completion orchestration
 │   │   ├── error.ts        # KnownError class and handleCliError
-│   │   ├── constants.ts    # commandName and projectName constants
+│   │   ├── constants.ts    # commandName, projectName, unset-MODEL placeholder
+│   │   ├── model-compat.ts # resolveModel(): drop MODEL names that belong to another provider
 │   │   ├── os-detect.ts    # Shell and OS detection
 │   │   ├── shell-history.ts # Append commands to shell history
 │   │   ├── stream-to-iterable.ts # Convert IncomingMessage to async iterable
@@ -53,11 +54,15 @@ ai-shell/
 │   │       ├── index.ts    # createProvider() factory function
 │   │       ├── gemini.ts   # Google Gemini provider
 │   │       ├── openai.ts   # OpenAI provider
+│   │       ├── anthropic.ts # Anthropic Claude provider
 │   │       └── ollama.ts   # Ollama local provider
 ├── tests/
 │   ├── unit/
 │   │   ├── config.test.ts
+│   │   ├── completion.test.ts
+│   │   ├── model-compat.test.ts
 │   │   └── providers/
+│   │       ├── anthropic.test.ts
 │   │       ├── gemini.test.ts
 │   │       └── ollama.test.ts
 │   ├── integration/
@@ -67,7 +72,7 @@ ai-shell/
 ├── specs/                  # Feature specifications
 │   ├── 001-multi-provider-support/
 │   └── 002-ollama-polish/
-├── dist/                   # Build output (git-ignored)
+├── dist/                   # Build output (git-ignored; run npm run build)
 │   └── cli.mjs            # Bundled executable
 ├── coverage/              # Test coverage reports (git-ignored)
 ├── package.json
@@ -99,6 +104,14 @@ interface CompletionProvider {
 ```
 
 All providers convert their native streaming formats to a common SSE format compatible with the OpenAI response structure for unified stream processing.
+
+### Claude Provider Rules
+
+- Never send temperature, top_p, top_k, a thinking param or an assistant prefill (400s on current models)
+- max_tokens is 16000 (thinking counts toward it); effort is fixed at `low`
+- Refusal fallbacks (`betas` + `fallbacks: 'default'`) only for opus/sonnet/fable/mythos 5.x; Haiku rejects them
+- Stream with `client.beta.messages.stream`, forward only `text_delta` events, check `finalMessage().stop_reason` for `refusal`
+- SDK request errors surface while iterating, so the provider reads to the first text delta before returning the stream
 
 ### Configuration Management
 
@@ -138,11 +151,12 @@ Stored in ~/.ai-shell INI file:
 
 ```ini
 # Provider selection (default: gemini)
-PROVIDER=gemini  # Options: gemini, openai, ollama
+PROVIDER=gemini  # Options: gemini, openai, anthropic, ollama
 
 # API Keys
 GEMINI_KEY=your_key_here
 OPENAI_KEY=your_key_here
+ANTHROPIC_KEY=your_key_here  # or set the ANTHROPIC_API_KEY env var
 
 # Provider-specific settings
 OLLAMA_HOST=http://localhost:11434
@@ -157,6 +171,7 @@ SILENT_MODE=false
 
 - **Gemini**: gemini-3-flash-preview
 - **OpenAI**: gpt-4o-mini
+- **Anthropic**: claude-opus-5-5 (set MODEL=claude-haiku-5-5 for speed/cost)
 - **Ollama**: qwen2.5-coder:14b
 
 ## CLI Commands
@@ -171,7 +186,7 @@ lan2cli chat                  # Interactive chat mode
 lan2cli config                # Interactive config UI
 lan2cli config set KEY=VALUE  # Set config value
 lan2cli config get KEY        # Get config value
-lan2cli update                # Update to latest version
+lan2cli update                # Show source-update steps
 ```
 
 ### Command Flags
@@ -209,7 +224,6 @@ Coverage reports generated in `coverage/` directory with multiple formats:
 - Never commit to main directly
 - PRs require review
 - All tests must pass before merge
-- Current branch: 004-remove-i18n
 
 ## Active Technologies
 
@@ -231,6 +245,7 @@ Coverage reports generated in `coverage/` directory with multiple formats:
 
 - **@google/generative-ai 0.24.1** - Gemini provider (uses generateContentStream)
 - **openai 6.17.0** - OpenAI provider (uses chat.completions.create with stream)
+- **@anthropic-ai/sdk ^1.8.0** - Claude provider (beta.messages.stream; text_delta events only)
 - **axios** - Ollama provider (custom HTTP implementation)
 
 ### Development
@@ -261,17 +276,12 @@ npm start             # Run from source with jiti (no build required)
 - **dist/cli.mjs** - Single bundled ESM executable (~86KB)
 - Binary command: `lan2cli` (configured in package.json bin field)
 
-### Release Process
+### Distribution
 
-```bash
-npm run release:patch  # Build, bump version, publish, push tags
-```
+lan2cli is installed from source (clone, `npm ci`, `npm run build`, `npm link`). The package is `private` and is not published to npm.
 
-### Package Distribution
-
-- Package name: `@builder.io/ai-shell`
+- Package name: `lan2cli`
 - Version: 1.0.12
-- Files included: `dist/` directory only
 
 ## Development Setup
 
@@ -289,6 +299,7 @@ lan2cli --help # Works from any directory
 ```
 
 **How it works:**
+
 - Creates symlink in npm's global `node_modules` pointing to project directory
 - Creates symlink in npm's global `bin` pointing to `dist/cli.mjs`
 - Makes `lan2cli` available in PATH from any directory
@@ -297,17 +308,20 @@ lan2cli --help # Works from any directory
 ### Development Workflows
 
 **Testing Built Version (Recommended for final verification):**
+
 ```bash
 npm run build      # Rebuild dist/cli.mjs
 lan2cli <command>  # Test globally (uses symlinked dist/cli.mjs)
 ```
 
 **Fast Development Iteration (No build required):**
+
 ```bash
 npm start -- <command>  # Run directly from source with jiti
 ```
 
 **Example workflows:**
+
 ```bash
 # Test a specific prompt globally
 npm run build
@@ -326,10 +340,11 @@ lan2cli config
 ### Unlinking (If Needed)
 
 To remove global command access:
+
 ```bash
 npm unlink                        # From project directory
 # Or
-npm unlink -g @builder.io/ai-shell  # From anywhere
+npm unlink -g lan2cli  # From anywhere
 ```
 
 **Note:** When switching Node.js versions with nvm, re-run `npm link` after switching.
@@ -358,6 +373,7 @@ npm unlink -g @builder.io/ai-shell  # From anywhere
 - Validation errors throw immediately
 - Provider errors wrapped with context and i18n support
 - Ollama-specific error handling for connection issues
+- Anthropic errors mapped from the SDK's typed classes (never message matching) to KnownError
 
 ## User Interaction Flow
 
