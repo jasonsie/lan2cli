@@ -4,6 +4,7 @@
   "version": "1.0.12",
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@clack/prompts": "latest",
     "@google/generative-ai": "^0.24.1",
     "@nexssp/os": "^2.0.35",
