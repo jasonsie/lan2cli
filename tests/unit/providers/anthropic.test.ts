@@ -244,4 +244,146 @@ describe('AnthropicProvider', () => {
       expect(supportsFallbacks(model)).toBe(fallbacks);
     });
   });
+
+  describe('refusals', () => {
+    const refusal = {
+      stop_reason: 'refusal',
+      stop_details: { type: 'refusal', category: 'cyber', explanation: null },
+    };
+
+    it('throws a KnownError with the category when refused before any text', async () => {
+      mockStream.mockReturnValue(makeStream([], refusal));
+
+      const call = provider.generateCompletion('p', { apiKey: 'k' });
+
+      await expect(call).rejects.toBeInstanceOf(KnownError);
+      await expect(call).rejects.toThrow(/declined.*category: cyber/);
+    });
+
+    it('omits the category when none is given', async () => {
+      mockStream.mockReturnValue(
+        makeStream([], { stop_reason: 'refusal', stop_details: null })
+      );
+
+      await expect(
+        provider.generateCompletion('p', { apiKey: 'k' })
+      ).rejects.toThrow(/^Claude declined this request\. /);
+    });
+
+    it('errors the stream when the refusal arrives after some text', async () => {
+      mockStream.mockReturnValue(makeStream([textDelta('rm')], refusal));
+
+      const stream = await provider.generateCompletion('p', { apiKey: 'k' });
+
+      await expect(collect(stream)).rejects.toThrow(/category: cyber/);
+    });
+  });
+
+  describe('error mapping', () => {
+    const headers = new Headers();
+
+    const cases: [string, unknown, RegExp][] = [
+      [
+        'AuthenticationError',
+        new Anthropic.AuthenticationError(401, {}, 'bad key', headers),
+        /rejected your API key.*ANTHROPIC_KEY/,
+      ],
+      [
+        'PermissionDeniedError',
+        new Anthropic.PermissionDeniedError(403, {}, 'nope', headers),
+        /does not have permission/,
+      ],
+      [
+        'NotFoundError',
+        new Anthropic.NotFoundError(404, {}, 'no such model', headers),
+        /could not find the requested model.*MODEL/,
+      ],
+      [
+        'BadRequestError',
+        new Anthropic.BadRequestError(
+          400,
+          { error: { message: 'invalid field' } },
+          undefined,
+          headers
+        ),
+        /rejected the request \(400\): invalid field/,
+      ],
+      [
+        'RateLimitError',
+        new Anthropic.RateLimitError(429, {}, 'slow down', headers),
+        /rate limit/,
+      ],
+      [
+        'InternalServerError',
+        new Anthropic.InternalServerError(529, {}, 'overloaded', headers),
+        /unavailable or overloaded \(529\)/,
+      ],
+      [
+        'APIConnectionError',
+        new Anthropic.APIConnectionError({ message: 'down' }),
+        /Could not reach the Anthropic API/,
+      ],
+      [
+        'APIConnectionTimeoutError',
+        new Anthropic.APIConnectionTimeoutError(),
+        /Could not reach the Anthropic API/,
+      ],
+      [
+        'APIError',
+        new Anthropic.APIError(
+          418,
+          { error: { message: 'teapot' } },
+          undefined,
+          headers
+        ),
+        /failed with status 418: teapot/,
+      ],
+    ];
+
+    it.each(cases)('maps %s to a KnownError', async (_name, error, pattern) => {
+      mockStream.mockReturnValue(makeStream([], endTurn, error));
+
+      const call = provider.generateCompletion('p', { apiKey: 'k' });
+
+      await expect(call).rejects.toBeInstanceOf(KnownError);
+      await expect(call).rejects.toThrow(pattern);
+    });
+
+    it('does not claim a bad key for a rate limit', async () => {
+      mockStream.mockReturnValue(
+        makeStream(
+          [],
+          endTurn,
+          new Anthropic.RateLimitError(429, {}, 'API key', headers)
+        )
+      );
+
+      await expect(
+        provider.generateCompletion('p', { apiKey: 'k' })
+      ).rejects.not.toThrow(/API key/);
+    });
+
+    it('maps errors that occur after streaming has started', async () => {
+      mockStream.mockReturnValue(
+        makeStream(
+          [textDelta('ls')],
+          endTurn,
+          new Anthropic.APIConnectionError({ message: 'dropped' })
+        )
+      );
+
+      const stream = await provider.generateCompletion('p', { apiKey: 'k' });
+
+      await expect(collect(stream)).rejects.toBeInstanceOf(KnownError);
+    });
+
+    it('passes unknown errors through unchanged', async () => {
+      const boom = new Error('boom');
+      mockStream.mockReturnValue(makeStream([], endTurn, boom));
+
+      await expect(
+        provider.generateCompletion('p', { apiKey: 'k' })
+      ).rejects.toBe(boom);
+    });
+  });
 });
