@@ -97,7 +97,7 @@ describe('OllamaProvider', () => {
           },
           {
             responseType: 'stream',
-            timeout: 10000,
+            timeout: 0,
           }
         );
       });

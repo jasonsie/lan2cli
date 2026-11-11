@@ -312,7 +312,7 @@ describe('Ollama E2E Integration Tests', () => {
         }),
         expect.objectContaining({
           responseType: 'stream',
-          timeout: 10000,
+          timeout: 0,
         })
       );
     });
