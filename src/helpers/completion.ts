@@ -284,6 +284,8 @@ const explainScript = dedent`
 `;
 
 function getOperationSystemDetails() {
+  // CJS-only legacy entry point; pkgroll bundles this require.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const os = require('@nexssp/os/legacy');
   return os.name();
 }

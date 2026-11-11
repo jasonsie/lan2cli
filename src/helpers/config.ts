@@ -12,12 +12,6 @@ const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: unknown, key: PropertyKey) =>
   hasOwnProperty.call(object, key);
 
-const parseAssert = (name: string, condition: any, message: string) => {
-  if (!condition) {
-    throw new KnownError(`${'Invalid config property'} ${name}: ${message}`);
-  }
-};
-
 /**
  * Validates that a string is a valid Ollama host URL (http or https)
  */

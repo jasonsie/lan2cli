@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getConfig, setConfigs } from '../../src/helpers/config';
 import fs from 'fs/promises';
-import path from 'path';
 import os from 'os';
 import ini from 'ini';
 import { createProvider } from '../../src/helpers/providers';
@@ -24,7 +23,6 @@ vi.mock('fs/promises');
 
 describe('Provider Switching Integration', () => {
   const mockHomeDir = '/mock/home';
-  const mockConfigPath = path.join(mockHomeDir, '.ai-shell');
 
   beforeEach(() => {
     vi.resetAllMocks();
