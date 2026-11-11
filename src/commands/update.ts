@@ -1,25 +1,22 @@
 import { command } from 'cleye';
-import { execaCommand } from 'execa';
 import { dim } from 'kolorist';
+import { commandName } from '../helpers/constants';
 
 export default command(
   {
     name: 'update',
     help: {
-      description: 'Update AI Shell to the latest version',
+      description: `Show how to update ${commandName} (installed from source)`,
     },
   },
   async () => {
     console.log('');
-    const command = `npm update -g @builder.io/ai-shell`;
-    console.log(dim(`${'Running'}: ${command}`));
+    console.log(
+      `${commandName} is installed from source and is not published to npm.`
+    );
+    console.log('To update, run this in your clone of the repository:');
     console.log('');
-    await execaCommand(command, {
-      stdio: 'inherit',
-      shell: process.env.SHELL || true,
-    }).catch(() => {
-      // No need to handle, will go to stderr
-    });
+    console.log(dim('  git pull && npm ci && npm run build'));
     console.log('');
   }
 );
