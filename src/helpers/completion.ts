@@ -159,107 +159,113 @@ export async function getRevision({
   };
 }
 
+function parseContent(payload: string): string {
+  const data = payload.replaceAll(/(\n)?^data:\s*/g, '');
+  try {
+    const delta = JSON.parse(data.trim());
+    return delta.choices?.[0]?.delta?.content ?? '';
+  } catch (error) {
+    return `Error with JSON.parse and ${payload}.\n${error}`;
+  }
+}
+
 export const readData =
   (
     iterableStream: AsyncGenerator<string, void>,
     ...excluded: (RegExp | string | undefined)[]
   ) =>
   (writer: (data: string) => void): Promise<string> =>
-    new Promise(async (resolve) => {
-      let stopTextStream = false;
-      let data = '';
-      let content = '';
-      let dataStart = false;
-      let buffer = ''; // This buffer will temporarily hold incoming data only for detecting the start
+    new Promise(async (resolve, reject) => {
+      try {
+        let stopTextStream = false;
+        let data = '';
+        let content = '';
+        let dataStart = false;
+        let buffer = ''; // This buffer will temporarily hold incoming data only for detecting the start
 
-      const [excludedPrefix] = excluded;
-      const stopTextStreamKeys = ['q', 'escape']; //Group of keys that stop the text stream
+        const [excludedPrefix] = excluded;
+        const stopTextStreamKeys = ['q', 'escape']; //Group of keys that stop the text stream
 
-      process.stdin.setRawMode(true);
+        process.stdin.setRawMode(true);
 
-      process.stdin.on('keypress', (key, data) => {
-        if (stopTextStreamKeys.includes(data.name)) {
-          stopTextStream = true;
-        }
-      });
-      for await (const chunk of iterableStream) {
-        const payloads = chunk.toString().split('\n\n');
-        for (const payload of payloads) {
-          if (payload.includes('[DONE]') || stopTextStream) {
-            // Flush any remaining buffered content before resolving
-            if (buffer && !dataStart) {
-              const bufferedContentWithoutExcluded = stripRegexPatterns(
-                buffer,
-                excluded
-              );
-              data += bufferedContentWithoutExcluded;
-              writer(bufferedContentWithoutExcluded);
-            }
-            dataStart = false;
-            resolve(data);
-            return;
+        process.stdin.on('keypress', (key, data) => {
+          if (stopTextStreamKeys.includes(data.name)) {
+            stopTextStream = true;
           }
-
-          if (payload.startsWith('data:')) {
-            content = parseContent(payload);
-            // Use buffer only for start detection
-            if (!dataStart) {
-              // Append content to the buffer
-              buffer += content;
-              if (buffer.match(excludedPrefix ?? '')) {
-                dataStart = true;
-                // Clear the buffer once it has served its purpose
-                buffer = '';
-                if (excludedPrefix) break;
-              } else if (excludedPrefix && buffer.length > 50) {
-                // If we've accumulated content but no code block marker found,
-                // assume the response doesn't have code blocks and start displaying
-                dataStart = true;
-                // Write the buffered content first
+        });
+        for await (const chunk of iterableStream) {
+          const payloads = chunk.toString().split('\n\n');
+          for (const payload of payloads) {
+            if (payload.includes('[DONE]') || stopTextStream) {
+              // Flush any remaining buffered content before resolving
+              if (buffer && !dataStart) {
                 const bufferedContentWithoutExcluded = stripRegexPatterns(
                   buffer,
                   excluded
                 );
                 data += bufferedContentWithoutExcluded;
                 writer(bufferedContentWithoutExcluded);
-                buffer = '';
               }
+              dataStart = false;
+              resolve(data);
+              return;
             }
 
-            if (dataStart && content) {
-              const contentWithoutExcluded = stripRegexPatterns(
-                content,
-                excluded
-              );
+            if (payload.startsWith('data:')) {
+              content = parseContent(payload);
+              // Use buffer only for start detection
+              if (!dataStart) {
+                // Append content to the buffer
+                buffer += content;
+                if (buffer.match(excludedPrefix ?? '')) {
+                  dataStart = true;
+                  // Clear the buffer once it has served its purpose
+                  buffer = '';
+                  if (excludedPrefix) break;
+                } else if (excludedPrefix && buffer.length > 50) {
+                  // If we've accumulated content but no code block marker found,
+                  // assume the response doesn't have code blocks and start displaying
+                  dataStart = true;
+                  // Write the buffered content first
+                  const bufferedContentWithoutExcluded = stripRegexPatterns(
+                    buffer,
+                    excluded
+                  );
+                  data += bufferedContentWithoutExcluded;
+                  writer(bufferedContentWithoutExcluded);
+                  buffer = '';
+                }
+              }
 
-              data += contentWithoutExcluded;
-              writer(contentWithoutExcluded);
+              if (dataStart && content) {
+                const contentWithoutExcluded = stripRegexPatterns(
+                  content,
+                  excluded
+                );
+
+                data += contentWithoutExcluded;
+                writer(contentWithoutExcluded);
+              }
             }
           }
         }
-      }
 
-      function parseContent(payload: string): string {
-        const data = payload.replaceAll(/(\n)?^data:\s*/g, '');
-        try {
-          const delta = JSON.parse(data.trim());
-          return delta.choices?.[0]?.delta?.content ?? '';
-        } catch (error) {
-          return `Error with JSON.parse and ${payload}.\n${error}`;
+        // Flush any remaining buffered content before final resolve
+        if (buffer && !dataStart) {
+          const bufferedContentWithoutExcluded = stripRegexPatterns(
+            buffer,
+            excluded
+          );
+          data += bufferedContentWithoutExcluded;
+          writer(bufferedContentWithoutExcluded);
         }
-      }
 
-      // Flush any remaining buffered content before final resolve
-      if (buffer && !dataStart) {
-        const bufferedContentWithoutExcluded = stripRegexPatterns(
-          buffer,
-          excluded
-        );
-        data += bufferedContentWithoutExcluded;
-        writer(bufferedContentWithoutExcluded);
+        resolve(data);
+      } catch (error) {
+        // Reject so a failed or refused stream never reaches the caller as a
+        // partial script.
+        reject(error);
       }
-
-      resolve(data);
     });
 
 function getExplanationPrompt(script: string) {

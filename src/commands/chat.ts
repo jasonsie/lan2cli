@@ -1,8 +1,9 @@
 import { command } from 'cleye';
 import { spinner, intro, outro, text, isCancel } from '@clack/prompts';
-import { cyan, green } from 'kolorist';
+import { cyan, green, red } from 'kolorist';
 import { generateCompletion, readData } from '../helpers/completion';
 import { getConfig } from '../helpers/config';
+import { handleCliError } from '../helpers/error';
 import { streamToIterable } from '../helpers/stream-to-iterable';
 
 interface ChatMessage {
@@ -44,29 +45,36 @@ export default command(
       }
 
       const infoSpin = spinner();
-      infoSpin.start(`THINKING...`);
-      chatHistory.push({
-        role: 'user',
-        content: userPrompt,
-      });
-      const { readResponse } = await getResponse({
-        prompt: chatHistory,
-        key: key!,
-        model,
-        apiEndpoint: apiEndpoint!,
-      });
+      try {
+        infoSpin.start(`THINKING...`);
+        chatHistory.push({
+          role: 'user',
+          content: userPrompt,
+        });
+        const { readResponse } = await getResponse({
+          prompt: chatHistory,
+          key: key!,
+          model,
+          apiEndpoint: apiEndpoint!,
+        });
 
-      infoSpin.stop(`${green('AI Shell:')}`);
-      console.log('');
-      const fullResponse = await readResponse(
-        process.stdout.write.bind(process.stdout)
-      );
-      chatHistory.push({
-        role: 'assistant',
-        content: fullResponse,
-      });
-      console.log('');
-      console.log('');
+        infoSpin.stop(`${green('AI Shell:')}`);
+        console.log('');
+        const fullResponse = await readResponse(
+          process.stdout.write.bind(process.stdout)
+        );
+        chatHistory.push({
+          role: 'assistant',
+          content: fullResponse,
+        });
+        console.log('');
+        console.log('');
+      } catch (error: any) {
+        infoSpin.stop();
+        console.error(`\n${red('✖')} ${error.message}`);
+        handleCliError(error);
+        process.exit(1);
+      }
       prompt();
     };
 
