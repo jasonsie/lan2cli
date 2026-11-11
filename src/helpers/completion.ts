@@ -1,11 +1,11 @@
 import dedent from 'dedent';
-import { IncomingMessage } from 'http';
 import { KnownError } from './error';
 import { streamToIterable } from './stream-to-iterable';
 import { detectShell } from './os-detect';
 import { stripRegexPatterns } from './strip-regex-patterns';
 import { createProvider } from './providers/index';
 import { getConfig } from './config';
+import { resolveModel } from './model-compat';
 
 // Openai outputs markdown format for code blocks. It oftne uses
 // a github style like: "```bash"
@@ -53,6 +53,7 @@ export async function generateCompletion({
   // If the provider is NOT openai, we need to ensure we have the correct key.
   // The 'key' argument passed to this function is typically OPENAI_KEY from the CLI or config.
   // If we are using Gemini, we need GEMINI_KEY.
+  // If we are using Anthropic, we need ANTHROPIC_KEY or ANTHROPIC_API_KEY.
   // If we are using Ollama, we don't need a key.
 
   let apiKey = key;
@@ -63,27 +64,18 @@ export async function generateCompletion({
   } else if (providerName === 'ollama') {
     apiKey = ''; // No key needed usually
     endpoint = config.OLLAMA_HOST || 'http://localhost:11434';
+  } else if (providerName === 'anthropic') {
+    // Empty means "not in the config file": the provider then falls back to
+    // the SDK's ANTHROPIC_API_KEY environment resolution.
+    apiKey = config.ANTHROPIC_KEY || '';
   }
 
   const provider = createProvider(providerName);
 
   // FR-011: Warn and fallback if configured MODEL is incompatible with selected PROVIDER
-  if (model) {
-    const isOpenAIModel = model.startsWith('gpt-') || model.startsWith('text-');
-    const isGeminiModel = model.startsWith('gemini-');
-
-    if (providerName === 'gemini' && isOpenAIModel) {
-      console.warn(
-        `\n${'Warning'}: Model '${model}' seems incompatible with Gemini. Using default.\n`
-      );
-      model = undefined;
-    } else if (providerName === 'openai' && isGeminiModel) {
-      console.warn(
-        `\n${'Warning'}: Model '${model}' seems incompatible with OpenAI. Using default.\n`
-      );
-      model = undefined;
-    }
-  }
+  const resolved = resolveModel(providerName, model);
+  if (resolved.warning) console.warn(`\n${resolved.warning}\n`);
+  model = resolved.model;
 
   // Convert message array to string for provider interface
   let promptText = '';

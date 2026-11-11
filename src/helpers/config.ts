@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import ini from 'ini';
+import { unsetModelPlaceholder } from './constants';
 import { KnownError, handleCliError } from './error';
 import * as p from '@clack/prompts';
 import { red } from 'kolorist';
@@ -35,7 +36,7 @@ const configParsers = {
   },
   MODEL(model?: string) {
     if (!model || model.length === 0) {
-      return 'gpt-4o-mini';
+      return unsetModelPlaceholder;
     }
 
     return model;
