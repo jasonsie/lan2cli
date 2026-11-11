@@ -1,5 +1,7 @@
 import { IncomingMessage } from 'http';
 
+export type ProviderName = 'openai' | 'gemini' | 'ollama' | 'anthropic';
+
 export interface CompletionOptions {
   model?: string;
   apiKey?: string;
