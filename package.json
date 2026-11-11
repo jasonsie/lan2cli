@@ -1,7 +1,16 @@
 {
-  "name": "@builder.io/ai-shell",
+  "name": "lan2cli",
   "description": "A CLI that converts natural language to shell commands.",
   "version": "1.0.12",
+  "private": true,
+  "license": "MIT",
+  "author": "Sie Ren-Bin",
+  "contributors": [
+    {
+      "name": "Builder.io",
+      "url": "https://github.com/BuilderIO/ai-shell"
+    }
+  ],
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -19,7 +28,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/BuilderIO/ai-shell"
+    "url": "git+https://github.com/jasonsie/lan2cli.git"
+  },
+  "homepage": "https://github.com/jasonsie/lan2cli#readme",
+  "bugs": {
+    "url": "https://github.com/jasonsie/lan2cli/issues"
   },
   "files": [
     "dist"
@@ -33,8 +46,7 @@
     "lint:fix": "prettier --write . && eslint --fix",
     "lint": "prettier --check . && eslint",
     "typecheck": "tsc",
-    "build": "pkgroll",
-    "release:patch": "npm run build && npm version patch && npm run build && npm publish && git push --follow-tags"
+    "build": "pkgroll"
   },
   "devDependencies": {
     "@types/dedent": "^0.7.0",
